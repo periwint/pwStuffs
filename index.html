@@ -349,9 +349,20 @@
       <button onclick="requestNotifPerm()" id="notifBtn">🔔 Alerts</button>
       <button onclick="exportData(true)">⬇ Export</button>
       <button onclick="document.getElementById('importFile').click()">⬆ Import</button>
+      <button onclick="signOut()" id="signOutBtn" style="display:none;">Sign out</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
     </div>
   </header>
+
+  <div id="authBox" class="quick-add" style="display:none; margin-bottom:16px;">
+    <div style="font-size:14px; margin-bottom:8px; font-weight:500;">Sign in to sync your tasks</div>
+    <div class="quick-add-row">
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
+      <button class="primary" onclick="signInOrUp()">Sign in / create account</button>
+    </div>
+    <div id="authMsg" style="font-size:12px; color:var(--text-muted);"></div>
+  </div>
 
   <div class="stats" id="stats"></div>
 
@@ -594,7 +605,15 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  // ---------- Supabase sync ----------
+  const SUPABASE_URL = "https://xdetkbdxszcwjnzcawqu.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lsm-Qz8iKRfUHk8uVfgJDg_q7XMhHt8";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  let currentUser = null;
+  let syncTimer = null;
+
   // ---------- App identity ----------
   // Change these for personal copy to keep storage separate.
   const APP_NAME = "Peri's Stuff to Do";
@@ -615,8 +634,8 @@
   let notifiedIds = new Set();
   let collapsedGroups = new Set();
 
-  // ---------- Persistence ----------
-  function load() {
+  // ---------- Persistence + cloud sync ----------
+  function loadLocalFallback() {
     try {
       const raw = localStorage.getItem(KEY_TASKS);
       if (raw) tasks = JSON.parse(raw);
@@ -624,25 +643,118 @@
       if (ni) notifiedIds = new Set(JSON.parse(ni));
       const cl = localStorage.getItem(KEY_COMPLETIONS);
       if (cl) completionsLog = JSON.parse(cl);
-      // Backfill: ensure every task has a requested date
-      let dirty = false;
-      tasks.forEach(t => {
-        if (!t.requested) {
-          // Use created timestamp as requested date if missing
-          const d = new Date(t.created || Date.now());
-          t.requested = d.toISOString().slice(0, 10);
-          dirty = true;
-        }
-      });
-      if (dirty) save();
-    } catch(e) { tasks = []; }
+      backfillTasks(false);
+    } catch(e) { tasks = []; completionsLog = []; }
   }
-  function save() {
+
+  function backfillTasks(shouldSave) {
+    let dirty = false;
+    tasks.forEach(t => {
+      if (!t.requested) {
+        const d = new Date(t.created || Date.now());
+        t.requested = d.toISOString().slice(0, 10);
+        dirty = true;
+      }
+    });
+    if (dirty && shouldSave) save();
+  }
+
+  async function loadCloud() {
+    if (!currentUser) return;
+    const { data, error } = await supabaseClient
+      .from('todo_data')
+      .select('data')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (error) {
+      alert('Could not load synced tasks: ' + error.message);
+      return;
+    }
+    if (data && data.data) {
+      tasks = Array.isArray(data.data.tasks) ? data.data.tasks : [];
+      completionsLog = Array.isArray(data.data.completionsLog) ? data.data.completionsLog : [];
+      notifiedIds = new Set(Array.isArray(data.data.notifiedIds) ? data.data.notifiedIds : []);
+    } else {
+      // First sign-in: upload any tasks already saved in this browser.
+      loadLocalFallback();
+      await save();
+    }
+    backfillTasks(true);
+  }
+
+  async function save() {
     try {
       localStorage.setItem(KEY_TASKS, JSON.stringify(tasks));
       localStorage.setItem(KEY_NOTIFIED, JSON.stringify([...notifiedIds]));
       localStorage.setItem(KEY_COMPLETIONS, JSON.stringify(completionsLog));
-    } catch(e) { alert('Could not save — storage may be full or disabled.'); }
+    } catch(e) {}
+
+    if (!currentUser) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(async () => {
+      const payload = { tasks, completionsLog, notifiedIds: [...notifiedIds], savedAt: new Date().toISOString() };
+      const { error } = await supabaseClient
+        .from('todo_data')
+        .upsert({ user_id: currentUser.id, data: payload, updated_at: new Date().toISOString() });
+      if (error) {
+        console.error(error);
+        const el = document.getElementById('backupStatus');
+        if (el) { el.textContent = 'Sync error — check Supabase setup'; el.style.color = 'var(--overdue-border)'; }
+      } else {
+        const el = document.getElementById('backupStatus');
+        if (el) { el.textContent = 'Synced just now'; el.style.color = 'var(--done-text)'; }
+      }
+    }, 250);
+  }
+
+  async function signInOrUp() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const msg = document.getElementById('authMsg');
+    if (!email || !password) { msg.textContent = 'Enter your email and password.'; return; }
+    msg.textContent = 'Signing in…';
+
+    let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) {
+      const created = await supabaseClient.auth.signUp({ email, password });
+      data = created.data; error = created.error;
+    }
+    if (error) { msg.textContent = error.message; return; }
+    currentUser = data.user;
+    await afterAuthChanged();
+  }
+
+  async function signOut() {
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    document.getElementById('authBox').style.display = '';
+    document.getElementById('signOutBtn').style.display = 'none';
+    loadLocalFallback();
+    render();
+  }
+
+  async function afterAuthChanged() {
+    document.getElementById('authBox').style.display = currentUser ? 'none' : '';
+    document.getElementById('signOutBtn').style.display = currentUser ? '' : 'none';
+    if (currentUser) await loadCloud();
+    else loadLocalFallback();
+    checkRollover();
+    render();
+    refreshAutocomplete();
+    updateNotifBtn();
+    updateBackupStatus();
+    checkBackupPrompt();
+    checkDueNotifications();
+  }
+
+  async function initAuthAndLoad() {
+    const { data } = await supabaseClient.auth.getSession();
+    currentUser = data.session ? data.session.user : null;
+    await afterAuthChanged();
+    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+      currentUser = session ? session.user : null;
+      await afterAuthChanged();
+    });
   }
 
   // ---------- Helpers ----------
@@ -1713,16 +1825,9 @@
   }
 
   // ---------- Init ----------
-  load();
-  checkRollover();
-  render();
-  refreshAutocomplete();
-  updateNotifBtn();
-  updateBackupStatus();
-  checkBackupPrompt();
+  initAuthAndLoad();
   // Re-check periodically: refreshes overdue states + fires notifications + updates backup age + handles day rollover
   setInterval(() => { checkRollover(); render(); checkDueNotifications(); updateBackupStatus(); }, 60*1000);
-  checkDueNotifications();
 
   // Keyboard: Esc closes modal
   document.addEventListener('keydown', e => {
