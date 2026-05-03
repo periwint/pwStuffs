@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#fff7ed" />
+<title>Peri's Stuff to Do</title>
+<!-- ============================================================
+     Peri's Stuff to Do — personal edition
+     Built from pwTasksWork. Storage namespace is separate so this
+     won't share data with the work version.
+     ============================================================ -->
+<style>
+  :root {
+    --bg: #fff7ed;
+    --surface: #ffffff;
+    --text: #2a1f15;
+    --text-muted: #6b5747;
+    --text-faint: #9c8775;
+    --border: rgba(42,31,21,0.12);
+    --border-strong: rgba(42,31,21,0.22);
+    --accent: #e07a18;
+    --accent-bg: #fdecd5;
+    --overdue-bg: #fceaea;
+    --overdue-text: #791f1f;
+    --overdue-border: #e24b4a;
+    --today-bg: #ffe8c8;
+    --today-text: #7a3a06;
+    --today-border: #e07a18;
+    --soon-bg: #fff1d9;
+    --soon-text: #854f0b;
+    --soon-border: #fac775;
+    --done-bg: #e1f0d3;
+    --done-text: #2f5a13;
+    --p-high: #e24b4a;
+    --p-med: #e07a18;
+    --p-low: #6fa83a;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #2a1f15;
+      --surface: #3a2c1f;
+      --text: #f7ecde;
+      --text-muted: #c0ad96;
+      --text-faint: #8a7560;
+      --border: rgba(247,236,222,0.12);
+      --border-strong: rgba(247,236,222,0.22);
+      --accent: #f0a050;
+      --accent-bg: #4a2e15;
+      --overdue-bg: #501313;
+      --overdue-text: #f7c1c1;
+      --overdue-border: #e24b4a;
+      --today-bg: #5a3506;
+      --today-text: #fac775;
+      --today-border: #e07a18;
+      --soon-bg: #412402;
+      --soon-text: #fac775;
+      --soon-border: #ba7517;
+      --done-bg: #1f3d0a;
+      --done-text: #c9e2a5;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    font-size: 15px; line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+  }
+  h1 { font-size: 22px; font-weight: 500; margin: 0; }
+  .header-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  button {
+    background: var(--surface); color: var(--text);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 7px 12px;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background 0.1s;
+  }
+  button:hover { background: var(--accent-bg); }
+  button:active { transform: scale(0.98); }
+  button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  button.primary:hover { opacity: 0.9; background: var(--accent); }
+  button.danger { color: var(--overdue-text); }
+  input, select, textarea {
+    background: var(--surface); color: var(--text);
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 8px 10px;
+    font-size: 14px; font-family: inherit; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+
+  /* Quick add bar */
+  .quick-add {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px; margin-bottom: 16px;
+  }
+  .quick-add-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .quick-add-row:last-child { margin-bottom: 0; }
+  .quick-add input[type="text"] { flex: 1; }
+  .quick-add-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+  }
+
+  /* Filter bar */
+  .filters {
+    display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-pill {
+    padding: 5px 11px; border-radius: 99px; font-size: 12px;
+    background: var(--surface); border: 0.5px solid var(--border-strong);
+    cursor: pointer; user-select: none; color: var(--text-muted);
+  }
+  .filter-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .search-box { flex: 1; min-width: 150px; }
+
+  /* Stats summary */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;
+  }
+  .stat-num { font-size: 20px; font-weight: 500; }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat.overdue .stat-num { color: var(--overdue-border); }
+  .stat.today .stat-num { color: var(--today-border); }
+
+  /* Task list */
+  .task-list { display: flex; flex-direction: column; gap: 6px; }
+  .task {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-left: 4px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px; align-items: flex-start;
+    cursor: grab;
+    transition: background 0.1s;
+  }
+  .task:hover { background: var(--accent-bg); }
+  .task.dragging { opacity: 0.4; }
+  .task.drag-over { border-top: 2px solid var(--accent); }
+  .task.overdue { background: var(--overdue-bg); border-left-color: var(--overdue-border); }
+  .task.today { background: var(--today-bg); border-left-color: var(--today-border); }
+  .task.soon { border-left-color: var(--soon-border); }
+  .task.done { opacity: 0.55; background: var(--done-bg); border-left-color: var(--done-text); }
+  .task.done .task-title { text-decoration: line-through; }
+
+  .task-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 4px; cursor: pointer;
+    flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+  }
+  .task-check.checked { background: var(--accent); border-color: var(--accent); }
+  .task-check.checked::after {
+    content: "✓"; color: white; font-size: 13px; line-height: 1;
+  }
+
+  .task-body { min-width: 0; }
+  .task-title {
+    font-weight: 500; font-size: 14px; margin-bottom: 3px;
+    word-wrap: break-word;
+  }
+  .task-meta {
+    font-size: 12px; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center;
+  }
+  .badge {
+    padding: 2px 7px; border-radius: 99px; font-size: 11px;
+    background: var(--accent-bg); color: var(--accent);
+    white-space: nowrap;
+  }
+  .badge.type-ssrs { background: #eeedfe; color: #3c3489; }
+  .badge.type-pbi { background: #faeeda; color: #633806; }
+  .badge.type-excel { background: #eaf3de; color: #27500a; }
+  .badge.type-sql { background: #e6f1fb; color: #0c447c; }
+  .badge.type-other { background: #f1efe8; color: #444441; }
+  .badge.src { background: #f1efe8; color: #444441; }
+  .badge.recur { background: #eeedfe; color: #3c3489; }
+  .badge.cost { background: #eaf3de; color: #27500a; font-variant-numeric: tabular-nums; }
+  .badge.time { background: #e6f1fb; color: #0c447c; font-variant-numeric: tabular-nums; }
+  .badge.project { background: #fbeae8; color: #791f1f; }
+  .badge.habit { background: #fff0e0; color: #b85c00; }
+  @media (prefers-color-scheme: dark) {
+    .badge.cost { background: #173404; color: #c0dd97; }
+    .badge.time { background: #0c447c; color: #b5d4f4; }
+    .badge.project { background: #501313; color: #f7c1c1; }
+    .badge.habit { background: #4a2a00; color: #ffd9a8; }
+  }
+  .badge.focus-today { background: #faeeda; color: #633806; font-weight: 500; }
+  .badge.focus-tomorrow { background: #e6f1fb; color: #0c447c; }
+  .badge.focus-thisweek { background: #eaf3de; color: #27500a; }
+  .badge.focus-nextweek { background: #f1efe8; color: #444441; }
+  .badge.focus-someday { background: #ede4f5; color: #4a2e6e; font-style: italic; }
+  @media (prefers-color-scheme: dark) {
+    .badge.type-ssrs { background: #3c3489; color: #cecbf6; }
+    .badge.type-pbi { background: #633806; color: #fac775; }
+    .badge.type-excel { background: #173404; color: #c0dd97; }
+    .badge.type-sql { background: #0c447c; color: #b5d4f4; }
+    .badge.type-other { background: #2c2c2a; color: #d3d1c7; }
+    .badge.src { background: #2c2c2a; color: #d3d1c7; }
+    .badge.recur { background: #3c3489; color: #cecbf6; }
+    .badge.focus-today { background: #633806; color: #fac775; }
+    .badge.focus-tomorrow { background: #0c447c; color: #b5d4f4; }
+    .badge.focus-thisweek { background: #173404; color: #c0dd97; }
+    .badge.focus-nextweek { background: #2c2c2a; color: #d3d1c7; }
+    .badge.focus-someday { background: #2e2438; color: #c2a8e0; }
+  }
+  .priority-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+  }
+  .priority-high { background: var(--p-high); }
+  .priority-med { background: var(--p-med); }
+  .priority-low { background: var(--p-low); }
+
+  .task-actions {
+    display: flex; gap: 4px; flex-shrink: 0;
+  }
+  .icon-btn {
+    background: transparent; border: none; padding: 4px 6px;
+    color: var(--text-faint); font-size: 14px; cursor: pointer;
+    border-radius: 4px;
+  }
+  .icon-btn:hover { background: var(--border); color: var(--text); }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--text-muted);
+  }
+
+  .group-header {
+    font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 12px 4px 4px; font-weight: 500;
+    cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .group-header:hover { color: var(--text); }
+  .group-header .caret {
+    display: inline-block; transition: transform 0.15s;
+  }
+  .group-header.collapsed .caret { transform: rotate(-90deg); }
+  .group-header .count {
+    font-weight: 400; color: var(--text-faint);
+    text-transform: none; letter-spacing: 0;
+  }
+  .group-tasks { display: flex; flex-direction: column; gap: 6px; }
+  .group-tasks.collapsed { display: none; }
+
+  .age-pill {
+    font-size: 10px; color: var(--text-faint);
+    margin-left: 4px;
+  }
+  .age-pill.stale { color: var(--today-border); }
+  .age-pill.very-stale { color: var(--overdue-border); font-weight: 500; }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px; margin-bottom: 16px;
+  }
+  .metric-card {
+    background: var(--bg); border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .metric-num { font-size: 22px; font-weight: 500; }
+  .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .breakdown-table { width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 8px; }
+  .breakdown-table th { text-align: left; padding: 6px 8px; color: var(--text-muted); font-weight: 500; font-size: 12px; text-transform: uppercase; border-bottom: 0.5px solid var(--border); }
+  .breakdown-table td { padding: 5px 8px; border-bottom: 0.5px solid var(--border); }
+
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: flex-start; justify-content: center;
+    z-index: 100; padding: 16px; overflow-y: auto;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--bg); border-radius: var(--radius);
+    padding: 20px; max-width: 500px; width: 100%;
+    margin-top: 5vh;
+  }
+  .modal h2 { font-size: 18px; font-weight: 500; margin: 0 0 16px; }
+  .modal-row { margin-bottom: 12px; }
+  .modal-row label {
+    display: block; font-size: 12px; color: var(--text-muted);
+    margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .modal-row-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  /* Digest view */
+  .digest {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+    display: none;
+  }
+  .digest.show { display: block; }
+  .digest h3 { font-size: 15px; margin: 0 0 8px; font-weight: 500; }
+  .digest h4 { font-size: 13px; margin: 12px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+  .digest ul { margin: 0; padding-left: 20px; font-size: 13px; }
+  .digest li { margin-bottom: 3px; }
+  .digest-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .quick-add-row { flex-direction: column; }
+    .modal-row-2col { grid-template-columns: 1fr; }
+    h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1 id="appHeading">Peri's Stuff to Do</h1>
+      <div id="backupStatus" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"></div>
+    </div>
+    <div class="header-actions">
+      <button onclick="toggleDigest()">📋 Digest</button>
+      <button onclick="toggleHistory()" id="histBtn">📊 History</button>
+      <button onclick="requestNotifPerm()" id="notifBtn">🔔 Alerts</button>
+      <button onclick="exportData(true)">⬇ Export</button>
+      <button onclick="document.getElementById('importFile').click()">⬆ Import</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="digest" id="digest"></div>
+  <div class="digest" id="history" style="display: none;"></div>
+
+  <div class="quick-add">
+    <div class="quick-add-row">
+      <input type="text" id="qaTitle" placeholder="Quick add a task… (press Enter)" onkeydown="if(event.key==='Enter')quickAdd()" />
+      <button class="primary" onclick="quickAdd()">Add</button>
+      <button onclick="openModal()">+ Detailed</button>
+    </div>
+    <div class="quick-add-grid">
+      <input type="text" id="qaRequester" placeholder="For whom (or yourself)" list="dl-requesters" />
+      <input type="text" id="qaProject" placeholder="Project (optional)" list="dl-projects" />
+      <select id="qaType">
+        <option value="">Type…</option>
+        <option value="Personal">Personal</option>
+        <option value="Work">Work</option>
+        <option value="Church">Church</option>
+        <option value="Yard">Yard</option>
+        <option value="House">House</option>
+        <option value="Family">Family</option>
+        <option value="Friends">Friends</option>
+        <option value="Crafting">Crafting</option>
+        <option value="Sewing">Sewing</option>
+        <option value="Errands">Errands</option>
+        <option value="Health">Health</option>
+        <option value="Cooking">Cooking</option>
+        <option value="Travel">Travel</option>
+        <option value="Finance">Finance</option>
+        <option value="Pets">Pets</option>
+        <option value="Hobbies">Hobbies</option>
+      </select>
+      <select id="qaSource">
+        <option value="">Source…</option>
+        <option value="My idea">My idea</option>
+        <option value="Asked by someone">Asked by someone</option>
+        <option value="Email/Text">Email / Text</option>
+        <option value="Saw it somewhere">Saw it somewhere</option>
+        <option value="Other">Other</option>
+      </select>
+      <select id="qaPriority">
+        <option value="med">Medium priority</option>
+        <option value="high">High priority</option>
+        <option value="low">Low priority</option>
+      </select>
+      <select id="qaFocus" title="When do you plan to work on this?">
+        <option value="">Focus…</option>
+        <option value="today">⭐ Today</option>
+        <option value="tomorrow">📅 Tomorrow</option>
+        <option value="thisweek">📆 This week</option>
+        <option value="nextweek">⏭ Next week</option>
+        <option value="someday">🌙 Someday</option>
+      </select>
+      <input type="number" id="qaCost" placeholder="Cost ($, optional)" min="0" step="0.01" />
+      <input type="number" id="qaTimeEst" placeholder="Time estimate (min)" min="0" step="5" />
+      <input type="date" id="qaRequested" title="Requested date (defaults to today)" />
+      <input type="datetime-local" id="qaDue" title="Due date" />
+    </div>
+  </div>
+
+  <datalist id="dl-requesters"></datalist>
+  <datalist id="dl-projects"></datalist>
+
+  <div class="filters">
+    <input type="text" class="search-box" id="search" placeholder="🔍 Search…" oninput="render()" />
+    <span class="filter-pill active" data-filter="active" onclick="setFilter('active')">Active</span>
+    <span class="filter-pill" data-filter="focus" onclick="setFilter('focus')">⭐ Today</span>
+    <span class="filter-pill" data-filter="tomorrow" onclick="setFilter('tomorrow')">📅 Tomorrow</span>
+    <span class="filter-pill" data-filter="thisweek" onclick="setFilter('thisweek')">📆 This week</span>
+    <span class="filter-pill" data-filter="someday" onclick="setFilter('someday')">🌙 Someday</span>
+    <span class="filter-pill" data-filter="habits" onclick="setFilter('habits')">🔥 Habits</span>
+    <span class="filter-pill" data-filter="all" onclick="setFilter('all')">All</span>
+    <span class="filter-pill" data-filter="overdue" onclick="setFilter('overdue')">Overdue</span>
+    <span class="filter-pill" data-filter="done" onclick="setFilter('done')">Done</span>
+  </div>
+
+  <div class="filters" style="margin-top: -4px;">
+    <label style="font-size: 12px; color: var(--text-muted);">Sort:</label>
+    <select id="sortBy" onchange="render()" style="width: auto; padding: 4px 8px; font-size: 13px;">
+      <option value="focus">Focus (Today first)</option>
+      <option value="manual">Manual order</option>
+      <option value="due">Due date</option>
+      <option value="requested">Added date (newest)</option>
+      <option value="age">Age (oldest first)</option>
+      <option value="priority">Priority</option>
+      <option value="cost">Cost (highest first)</option>
+      <option value="time">Time (shortest first)</option>
+    </select>
+    <label style="font-size: 12px; color: var(--text-muted); margin-left: 8px;">Group:</label>
+    <select id="groupBy" onchange="render()" style="width: auto; padding: 4px 8px; font-size: 13px;">
+      <option value="">None</option>
+      <option value="focus">Focus</option>
+      <option value="type">Type</option>
+      <option value="project">Project</option>
+      <option value="requester">For whom</option>
+      <option value="source">Source</option>
+    </select>
+  </div>
+
+  <div class="task-list" id="taskList"></div>
+</div>
+
+<!-- Detailed add/edit modal -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h2 id="modalTitle">Add task</h2>
+    <div class="modal-row">
+      <label>Task</label>
+      <input type="text" id="mTitle" />
+    </div>
+    <div class="modal-row modal-row-2col">
+      <div>
+        <label>For whom</label>
+        <input type="text" id="mRequester" list="dl-requesters" placeholder="Yourself, family member, friend…" />
+      </div>
+      <div>
+        <label>Project (optional)</label>
+        <input type="text" id="mProject" list="dl-projects" placeholder="e.g. Bathroom remodel" />
+      </div>
+    </div>
+    <div class="modal-row modal-row-2col">
+      <div>
+        <label>Type</label>
+        <select id="mType">
+          <option value="">—</option>
+          <option value="Personal">Personal</option>
+          <option value="Work">Work</option>
+          <option value="Church">Church</option>
+          <option value="Yard">Yard</option>
+          <option value="House">House</option>
+          <option value="Family">Family</option>
+          <option value="Friends">Friends</option>
+          <option value="Crafting">Crafting</option>
+          <option value="Sewing">Sewing</option>
+          <option value="Errands">Errands</option>
+          <option value="Health">Health</option>
+          <option value="Cooking">Cooking</option>
+          <option value="Travel">Travel</option>
+          <option value="Finance">Finance</option>
+          <option value="Pets">Pets</option>
+          <option value="Hobbies">Hobbies</option>
+        </select>
+      </div>
+      <div>
+        <label>Source</label>
+        <select id="mSource">
+          <option value="">—</option>
+          <option value="My idea">My idea</option>
+          <option value="Asked by someone">Asked by someone</option>
+          <option value="Email/Text">Email / Text</option>
+          <option value="Saw it somewhere">Saw it somewhere</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-row modal-row-2col">
+      <div>
+        <label>Priority</label>
+        <select id="mPriority">
+          <option value="high">High</option>
+          <option value="med" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div>
+        <label>Focus (when to work on it)</label>
+        <select id="mFocus">
+          <option value="">— No plan —</option>
+          <option value="today">⭐ Today</option>
+          <option value="tomorrow">📅 Tomorrow</option>
+          <option value="thisweek">📆 This week</option>
+          <option value="nextweek">⏭ Next week</option>
+          <option value="someday">🌙 Someday</option>
+        </select>
+        <div id="mFocusNote" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: none;"></div>
+      </div>
+    </div>
+    <div class="modal-row modal-row-2col">
+      <div>
+        <label>Cost ($, optional)</label>
+        <input type="number" id="mCost" min="0" step="0.01" placeholder="e.g. 25.00" />
+      </div>
+      <div>
+        <label>Time estimate (minutes)</label>
+        <input type="number" id="mTimeEst" min="0" step="5" placeholder="e.g. 30" />
+      </div>
+    </div>
+    <div class="modal-row">
+      <label>Due date / time (hard deadline)</label>
+      <input type="datetime-local" id="mDue" onchange="updateFocusNote()" />
+    </div>
+    <div class="modal-row">
+      <label>Date added</label>
+      <input type="date" id="mRequested" />
+    </div>
+    <div class="modal-row" style="border-top: 0.5px solid var(--border); padding-top: 12px;">
+      <label>🔄 Recurrence</label>
+      <select id="mRecur" onchange="updateRecurUI()">
+        <option value="">None (one-off task)</option>
+        <option value="daily">Daily</option>
+        <option value="weekdays">Weekdays only (Mon–Fri)</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Every 2 weeks</option>
+        <option value="monthly">Monthly</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="modal-row" id="mCustomRow" style="display: none;">
+      <label>Repeat every</label>
+      <div style="display: flex; gap: 8px;">
+        <input type="number" id="mCustomN" min="1" value="2" style="width: 80px;" />
+        <select id="mCustomUnit" style="flex: 1;">
+          <option value="days">days</option>
+          <option value="weeks">weeks</option>
+          <option value="months">months</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-row" id="mAlertRow" style="display: none;">
+      <label>Daily alert time (optional)</label>
+      <input type="time" id="mAlertTime" />
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Leave blank to use the due date/time as the alert.</div>
+    </div>
+    <div class="modal-row" id="mHabitRow" style="display: none;">
+      <label style="display: flex; gap: 8px; align-items: center; cursor: pointer; text-transform: none; letter-spacing: 0;">
+        <input type="checkbox" id="mIsHabit" style="width: auto;" />
+        <span>🔥 Track as a habit (show streak & completion rate)</span>
+      </label>
+    </div>
+    <div class="modal-row">
+      <label>Notes</label>
+      <textarea id="mNotes" rows="3"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- App identity ----------
+  // Change these for personal copy to keep storage separate.
+  const APP_NAME = "Peri's Stuff to Do";
+  const APP_NAMESPACE = 'perisStuff';
+  const KEY_TASKS = APP_NAMESPACE + '_tasks_v1';
+  const KEY_NOTIFIED = APP_NAMESPACE + '_notified_v1';
+  const KEY_LAST_BACKUP = APP_NAMESPACE + '_lastBackup_v1';
+  const KEY_BACKUP_SNOOZED = APP_NAMESPACE + '_backupSnoozed_v1';
+  const KEY_FIRST_USE = APP_NAMESPACE + '_firstUse_v1';
+  const KEY_COMPLETIONS = APP_NAMESPACE + '_completions_v1';
+  const KEY_LAST_ROLLOVER = APP_NAMESPACE + '_lastRollover_v1';
+
+  // ---------- State ----------
+  let tasks = [];
+  let completionsLog = []; // {taskId, title, completedAt, requested}
+  let filter = 'active';
+  let editingId = null;
+  let notifiedIds = new Set();
+  let collapsedGroups = new Set();
+
+  // ---------- Persistence ----------
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY_TASKS);
+      if (raw) tasks = JSON.parse(raw);
+      const ni = localStorage.getItem(KEY_NOTIFIED);
+      if (ni) notifiedIds = new Set(JSON.parse(ni));
+      const cl = localStorage.getItem(KEY_COMPLETIONS);
+      if (cl) completionsLog = JSON.parse(cl);
+      // Backfill: ensure every task has a requested date
+      let dirty = false;
+      tasks.forEach(t => {
+        if (!t.requested) {
+          // Use created timestamp as requested date if missing
+          const d = new Date(t.created || Date.now());
+          t.requested = d.toISOString().slice(0, 10);
+          dirty = true;
+        }
+      });
+      if (dirty) save();
+    } catch(e) { tasks = []; }
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY_TASKS, JSON.stringify(tasks));
+      localStorage.setItem(KEY_NOTIFIED, JSON.stringify([...notifiedIds]));
+      localStorage.setItem(KEY_COMPLETIONS, JSON.stringify(completionsLog));
+    } catch(e) { alert('Could not save — storage may be full or disabled.'); }
+  }
+
+  // ---------- Helpers ----------
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function dueState(t) {
+    if (t.done) return 'done';
+    if (!t.due) return '';
+    const now = new Date();
+    const due = new Date(t.due);
+    const diff = due - now;
+    if (diff < 0) return 'overdue';
+    if (diff < 24*60*60*1000) {
+      const dueDay = due.toDateString(), today = now.toDateString();
+      if (dueDay === today) return 'today';
+      return 'soon';
+    }
+    if (diff < 3*24*60*60*1000) return 'soon';
+    return '';
+  }
+  function fmtDue(d) {
+    if (!d) return '';
+    const dt = new Date(d);
+    const now = new Date();
+    const sameDay = dt.toDateString() === now.toDateString();
+    const opts = sameDay
+      ? { hour: 'numeric', minute: '2-digit' }
+      : { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+    return dt.toLocaleString(undefined, opts);
+  }
+  function fmtDate(d) {
+    if (!d) return '';
+    return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function formatMinutes(min) {
+    if (!min || min < 1) return '';
+    if (min < 60) return min + 'm';
+    const h = Math.floor(min/60), m = min % 60;
+    if (m === 0) return h + 'h';
+    return h + 'h ' + m + 'm';
+  }
+  function ageDays(t) {
+    if (!t.requested) return 0;
+    const reqDate = new Date(t.requested + 'T00:00:00');
+    const now = new Date();
+    return Math.floor((now - reqDate) / (24*60*60*1000));
+  }
+  function ageLabel(days) {
+    if (days <= 0) return 'today';
+    if (days === 1) return '1d old';
+    if (days < 14) return days + 'd old';
+    if (days < 60) return Math.floor(days/7) + 'w old';
+    return Math.floor(days/30) + 'mo old';
+  }
+  function completionDays(t) {
+    if (!t.done || !t.completedAt || !t.requested) return null;
+    const reqDate = new Date(t.requested + 'T00:00:00');
+    const compDate = new Date(t.completedAt);
+    return Math.max(0, Math.floor((compDate - reqDate) / (24*60*60*1000)));
+  }
+
+  // ---------- Recurrence ----------
+  function recurLabel(t) {
+    if (!t.recur) return '';
+    const r = t.recur;
+    if (r === 'daily') return 'Daily';
+    if (r === 'weekdays') return 'Weekdays';
+    if (r === 'weekly') return 'Weekly';
+    if (r === 'biweekly') return 'Every 2 weeks';
+    if (r === 'monthly') return 'Monthly';
+    if (r === 'custom') return `Every ${t.customN || 1} ${t.customUnit || 'days'}`;
+    return '';
+  }
+  function nextDueDate(t, fromDate) {
+    // Returns ISO datetime-local string for next occurrence, or '' if no recurrence
+    if (!t.recur) return '';
+    const base = fromDate ? new Date(fromDate) : new Date();
+    let next = new Date(base);
+    if (t.recur === 'daily') {
+      next.setDate(next.getDate() + 1);
+    } else if (t.recur === 'weekdays') {
+      do { next.setDate(next.getDate() + 1); }
+      while (next.getDay() === 0 || next.getDay() === 6);
+    } else if (t.recur === 'weekly') {
+      next.setDate(next.getDate() + 7);
+    } else if (t.recur === 'biweekly') {
+      next.setDate(next.getDate() + 14);
+    } else if (t.recur === 'monthly') {
+      next.setMonth(next.getMonth() + 1);
+    } else if (t.recur === 'custom') {
+      const n = parseInt(t.customN, 10) || 1;
+      const u = t.customUnit || 'days';
+      if (u === 'days') next.setDate(next.getDate() + n);
+      else if (u === 'weeks') next.setDate(next.getDate() + 7*n);
+      else if (u === 'months') next.setMonth(next.getMonth() + n);
+    }
+    // Apply alert time if set, otherwise preserve base time
+    if (t.alertTime) {
+      const [h, m] = t.alertTime.split(':').map(Number);
+      next.setHours(h || 0, m || 0, 0, 0);
+    }
+    // Format as datetime-local string (yyyy-MM-ddTHH:mm)
+    const pad = n => String(n).padStart(2, '0');
+    return next.getFullYear() + '-' + pad(next.getMonth()+1) + '-' + pad(next.getDate())
+      + 'T' + pad(next.getHours()) + ':' + pad(next.getMinutes());
+  }
+  function updateRecurUI() {
+    const r = document.getElementById('mRecur').value;
+    document.getElementById('mCustomRow').style.display = (r === 'custom') ? '' : 'none';
+    document.getElementById('mAlertRow').style.display = r ? '' : 'none';
+    document.getElementById('mHabitRow').style.display = r ? '' : 'none';
+  }
+  function updateFocusNote() {
+    const dueVal = document.getElementById('mDue').value;
+    const select = document.getElementById('mFocus');
+    const note = document.getElementById('mFocusNote');
+    if (dueVal) {
+      // Compute what auto-focus would be
+      const fakeTask = { due: dueVal };
+      const ef = effectiveFocus(fakeTask);
+      select.value = ef;
+      select.disabled = true;
+      select.style.opacity = '0.6';
+      note.style.display = '';
+      note.textContent = `Auto-set from due date — currently ${FOCUS_LABELS[ef] || '—'}. Change due date to change.`;
+    } else {
+      select.disabled = false;
+      select.style.opacity = '';
+      note.style.display = 'none';
+    }
+  }
+
+  // ---------- Focus / planning ----------
+  const FOCUS_LABELS = {
+    today: '⭐ Today',
+    tomorrow: '📅 Tomorrow',
+    thisweek: '📆 This week',
+    nextweek: '⏭ Next week',
+    someday: '🌙 Someday',
+  };
+  const FOCUS_ORDER = ['today', 'tomorrow', 'thisweek', 'nextweek', 'someday', ''];
+  function focusBadge(t) {
+    if (!t.focus) return '';
+    return `<span class="badge focus-${t.focus}">${FOCUS_LABELS[t.focus]}</span>`;
+  }
+  function focusGroupName(f) {
+    return f ? FOCUS_LABELS[f] : '— No plan —';
+  }
+
+  // Auto-shift on new day:
+  //   today -> tomorrow (still on yesterday's stuff = it's now today's stuff visually)
+  //   ...wait, rethink: yesterday's "today" should become today's "today" if not done? No.
+  // Actually: at end of day, anything still flagged "today" rolls to "tomorrow"
+  // (which is now "today" tomorrow morning). So next morning:
+  //   - Old "today" items are now "tomorrow" -> user sees them with day's perspective
+  //   - Then we shift "tomorrow" -> "today" so the planning carries forward
+  // Simplest model: each calendar-day boundary shifts the WHOLE chain forward by one slot.
+  function checkRollover() {
+    const lastRollover = localStorage.getItem(KEY_LAST_ROLLOVER);
+    const today = todayStr();
+    if (lastRollover === today) return; // already rolled over today
+    if (!lastRollover) {
+      // First time using focus: just record today, don't shift anything
+      localStorage.setItem(KEY_LAST_ROLLOVER, today);
+      return;
+    }
+    // We're on a new day. Shift everything one step:
+    //  - tomorrow -> today
+    //  - today (unfinished) -> tomorrow
+    //  Only applies to MANUALLY-focused tasks (no due date). Tasks with due dates
+    //  derive their focus automatically from the due date and update on their own.
+    let shifted = 0;
+    let bumped = 0;
+    const wasToday = tasks.filter(t => !t.done && !t.due && t.focus === 'today');
+    const wasTomorrow = tasks.filter(t => !t.done && !t.due && t.focus === 'tomorrow');
+    wasToday.forEach(t => { t.focus = 'tomorrow'; bumped++; });
+    wasTomorrow.forEach(t => { t.focus = 'today'; shifted++; });
+    localStorage.setItem(KEY_LAST_ROLLOVER, today);
+    if (shifted || bumped) {
+      save();
+      setTimeout(() => {
+        const parts = [];
+        if (shifted) parts.push(shifted + ' Tomorrow → Today');
+        if (bumped) parts.push(bumped + ' unfinished Today → Tomorrow');
+        showRolloverBanner('Daily reset: ' + parts.join(', '));
+      }, 600);
+    }
+  }
+  function showRolloverBanner(msg) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed; top:12px; left:50%; transform:translateX(-50%); background:var(--accent); color:white; padding:10px 16px; border-radius:8px; font-size:13px; z-index:200; box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+    banner.textContent = msg;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.style.opacity = '0', 4000);
+    setTimeout(() => banner.remove(), 4500);
+  }
+  function setFocus(id, focus) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    t.focus = focus;
+    save(); render();
+  }
+
+  // ---------- Quick add ----------
+  function quickAdd() {
+    const title = document.getElementById('qaTitle').value.trim();
+    if (!title) return;
+    const requested = document.getElementById('qaRequested').value || todayStr();
+    const cost = document.getElementById('qaCost').value;
+    const timeEst = document.getElementById('qaTimeEst').value;
+    const t = {
+      id: uid(),
+      title,
+      requester: document.getElementById('qaRequester').value.trim(),
+      project: document.getElementById('qaProject').value.trim(),
+      type: document.getElementById('qaType').value,
+      source: document.getElementById('qaSource').value,
+      priority: document.getElementById('qaPriority').value,
+      focus: document.getElementById('qaFocus').value,
+      cost: cost ? parseFloat(cost) : null,
+      timeEst: timeEst ? parseInt(timeEst, 10) : null,
+      requested,
+      due: document.getElementById('qaDue').value,
+      notes: '',
+      done: false,
+      created: Date.now(),
+    };
+    tasks.unshift(t);
+    save();
+    document.getElementById('qaTitle').value = '';
+    document.getElementById('qaDue').value = '';
+    document.getElementById('qaRequested').value = '';
+    document.getElementById('qaFocus').value = '';
+    document.getElementById('qaCost').value = '';
+    document.getElementById('qaTimeEst').value = '';
+    document.getElementById('qaProject').value = '';
+    render();
+    refreshAutocomplete();
+  }
+
+  // ---------- Modal ----------
+  function openModal(id) {
+    editingId = id || null;
+    const t = id ? tasks.find(x => x.id === id) : null;
+    document.getElementById('modalTitle').textContent = id ? 'Edit task' : 'Add task';
+    document.getElementById('mTitle').value = t ? t.title : '';
+    document.getElementById('mRequester').value = t ? t.requester || '' : '';
+    document.getElementById('mProject').value = t ? t.project || '' : '';
+    document.getElementById('mType').value = t ? t.type || '' : '';
+    document.getElementById('mSource').value = t ? t.source || '' : '';
+    document.getElementById('mPriority').value = t ? t.priority : 'med';
+    document.getElementById('mFocus').value = t ? (t.focus || '') : '';
+    document.getElementById('mCost').value = t && t.cost != null ? t.cost : '';
+    document.getElementById('mTimeEst').value = t && t.timeEst != null ? t.timeEst : '';
+    document.getElementById('mRequested').value = t ? (t.requested || '') : todayStr();
+    document.getElementById('mDue').value = t ? t.due || '' : '';
+    document.getElementById('mNotes').value = t ? t.notes || '' : '';
+    document.getElementById('mRecur').value = t ? (t.recur || '') : '';
+    document.getElementById('mCustomN').value = t ? (t.customN || 2) : 2;
+    document.getElementById('mCustomUnit').value = t ? (t.customUnit || 'days') : 'days';
+    document.getElementById('mAlertTime').value = t ? (t.alertTime || '') : '';
+    document.getElementById('mIsHabit').checked = t ? !!t.isHabit : false;
+    updateRecurUI();
+    updateFocusNote();
+    document.getElementById('modal').classList.add('show');
+    setTimeout(() => document.getElementById('mTitle').focus(), 50);
+  }
+  function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+    editingId = null;
+  }
+  function saveModal() {
+    const title = document.getElementById('mTitle').value.trim();
+    if (!title) { alert('Task title is required.'); return; }
+    const cost = document.getElementById('mCost').value;
+    const timeEst = document.getElementById('mTimeEst').value;
+    const data = {
+      title,
+      requester: document.getElementById('mRequester').value.trim(),
+      project: document.getElementById('mProject').value.trim(),
+      type: document.getElementById('mType').value,
+      source: document.getElementById('mSource').value,
+      priority: document.getElementById('mPriority').value,
+      focus: document.getElementById('mFocus').value,
+      cost: cost ? parseFloat(cost) : null,
+      timeEst: timeEst ? parseInt(timeEst, 10) : null,
+      requested: document.getElementById('mRequested').value || todayStr(),
+      due: document.getElementById('mDue').value,
+      notes: document.getElementById('mNotes').value.trim(),
+      recur: document.getElementById('mRecur').value,
+      customN: parseInt(document.getElementById('mCustomN').value, 10) || 1,
+      customUnit: document.getElementById('mCustomUnit').value,
+      alertTime: document.getElementById('mAlertTime').value,
+      isHabit: document.getElementById('mIsHabit').checked,
+    };
+    if (editingId) {
+      const i = tasks.findIndex(x => x.id === editingId);
+      if (i >= 0) tasks[i] = { ...tasks[i], ...data };
+      notifiedIds.delete(editingId);
+    } else {
+      tasks.unshift({ id: uid(), ...data, done: false, created: Date.now() });
+    }
+    save();
+    closeModal();
+    render();
+    refreshAutocomplete();
+  }
+
+  // ---------- Actions ----------
+  function toggleDone(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    if (!t.done) {
+      // Marking done
+      if (t.recur) {
+        // Log this completion to history
+        completionsLog.push({
+          taskId: t.id,
+          title: t.title,
+          requester: t.requester || '',
+          project: t.project || '',
+          type: t.type || '',
+          completedAt: Date.now(),
+          requested: t.requested || todayStr(),
+          recur: t.recur,
+        });
+        // Cap log size to prevent runaway growth (keep last 1000)
+        if (completionsLog.length > 1000) completionsLog = completionsLog.slice(-1000);
+        // Reset task: bump due date, update requested date
+        t.due = nextDueDate(t, t.due || Date.now());
+        t.requested = todayStr();
+        notifiedIds.delete(t.id);
+      } else {
+        t.done = true;
+        t.completedAt = Date.now();
+      }
+    } else {
+      // Un-marking done (only one-off tasks can be in this state)
+      t.done = false;
+      t.completedAt = null;
+    }
+    save(); render();
+  }
+  function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    tasks = tasks.filter(x => x.id !== id);
+    save(); render();
+  }
+  function cyclePriority(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    const order = ['low', 'med', 'high'];
+    t.priority = order[(order.indexOf(t.priority) + 1) % 3];
+    save(); render();
+  }
+  function cycleFocus(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    if (t.due) {
+      // Auto-derived from due date - tell the user
+      alert("This task's Focus is automatically set from its Due date. Change the due date to change the focus.");
+      return;
+    }
+    const order = ['', 'today', 'tomorrow', 'thisweek', 'nextweek', 'someday'];
+    t.focus = order[(order.indexOf(t.focus || '') + 1) % order.length];
+    save(); render();
+  }
+
+  // ---------- Auto-focus from due date ----------
+  // If a task has a due date, its effective focus is derived from that date.
+  // Uses Sunday-Saturday calendar week boundaries.
+  function startOfDay(d) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+  function startOfWeek(d) {
+    // Sunday as start of week
+    const x = startOfDay(d);
+    x.setDate(x.getDate() - x.getDay());
+    return x;
+  }
+  function effectiveFocus(t) {
+    // Returns the focus value to display for this task.
+    // - If task has a due date, it's computed from the due date.
+    // - Otherwise, falls back to manually-set focus.
+    if (!t.due) return t.focus || '';
+    const now = new Date();
+    const today = startOfDay(now);
+    const due = startOfDay(new Date(t.due));
+    const diffDays = Math.round((due - today) / (24*60*60*1000));
+    if (diffDays <= 0) return 'today'; // today or overdue
+    if (diffDays === 1) return 'tomorrow';
+    // Sun-Sat week boundaries
+    const thisWeekStart = startOfWeek(today);
+    const thisWeekEnd = new Date(thisWeekStart); thisWeekEnd.setDate(thisWeekEnd.getDate() + 6);
+    const nextWeekStart = new Date(thisWeekEnd); nextWeekStart.setDate(nextWeekStart.getDate() + 1);
+    const nextWeekEnd = new Date(nextWeekStart); nextWeekEnd.setDate(nextWeekEnd.getDate() + 6);
+    if (due >= thisWeekStart && due <= thisWeekEnd) return 'thisweek';
+    if (due >= nextWeekStart && due <= nextWeekEnd) return 'nextweek';
+    return 'someday';
+  }
+  function isAutoFocus(t) {
+    return !!t.due;
+  }
+
+  // ---------- Habit streaks ----------
+  // Computes current streak (consecutive on-schedule completions ending today/yesterday)
+  // and longest streak. A streak breaks when the gap exceeds the recurrence interval + grace.
+  function expectedIntervalDays(t) {
+    if (!t.recur) return 0;
+    if (t.recur === 'daily' || t.recur === 'weekdays') return 1;
+    if (t.recur === 'weekly') return 7;
+    if (t.recur === 'biweekly') return 14;
+    if (t.recur === 'monthly') return 30;
+    if (t.recur === 'custom') {
+      const n = parseInt(t.customN, 10) || 1;
+      if (t.customUnit === 'days') return n;
+      if (t.customUnit === 'weeks') return 7*n;
+      if (t.customUnit === 'months') return 30*n;
+    }
+    return 1;
+  }
+  function habitStats(t) {
+    if (!t.isHabit || !t.recur) return null;
+    const completions = completionsLog
+      .filter(c => c.taskId === t.id)
+      .map(c => startOfDay(new Date(c.completedAt)).getTime())
+      .sort((a, b) => a - b);
+    if (!completions.length) {
+      return { current: 0, longest: 0, total: 0, last30Rate: 0 };
+    }
+    const interval = expectedIntervalDays(t);
+    // Grace window: lenient for longer intervals, strict for daily.
+    // Daily/weekdays: gap > 1 day breaks streak. Weekly: gap > 9 days. Monthly: gap > 35 days.
+    let grace;
+    if (interval === 1) grace = 0; // daily: must hit each day
+    else grace = Math.ceil(interval * 0.3);
+    const dayMs = 24*60*60*1000;
+    // Compute longest streak ever
+    let longest = 1, current = 1;
+    for (let i = 1; i < completions.length; i++) {
+      const gap = (completions[i] - completions[i-1]) / dayMs;
+      if (gap <= interval + grace) current++;
+      else { longest = Math.max(longest, current); current = 1; }
+    }
+    longest = Math.max(longest, current);
+    // Current streak: only count if last completion is recent enough
+    const today = startOfDay(new Date()).getTime();
+    const lastDone = completions[completions.length - 1];
+    const sinceLast = (today - lastDone) / dayMs;
+    let currentStreak = 0;
+    if (sinceLast <= interval + grace) {
+      currentStreak = 1;
+      for (let i = completions.length - 2; i >= 0; i--) {
+        const gap = (completions[i+1] - completions[i]) / dayMs;
+        if (gap <= interval + grace) currentStreak++;
+        else break;
+      }
+    }
+    // Last 30 days completion rate vs expected
+    const expected30 = Math.max(1, Math.floor(30 / interval));
+    const actual30 = completions.filter(c => today - c < 30*dayMs).length;
+    const rate = Math.min(100, Math.round(100 * actual30 / expected30));
+    return { current: currentStreak, longest, total: completions.length, last30Rate: rate };
+  }
+
+  // ---------- Filters ----------
+  function setFilter(f) {
+    filter = f;
+    document.querySelectorAll('.filter-pill').forEach(el => {
+      el.classList.toggle('active', el.dataset.filter === f);
+    });
+    render();
+  }
+
+  // ---------- Drag and drop reorder ----------
+  let dragId = null;
+  function onDragStart(e, id) {
+    dragId = id;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.task').forEach(t => t.classList.remove('drag-over'));
+    dragId = null;
+  }
+  function onDragOver(e, id) {
+    e.preventDefault();
+    if (!dragId || dragId === id) return;
+    document.querySelectorAll('.task').forEach(t => t.classList.remove('drag-over'));
+    e.currentTarget.classList.add('drag-over');
+  }
+  function onDrop(e, id) {
+    e.preventDefault();
+    if (!dragId || dragId === id) return;
+    const from = tasks.findIndex(t => t.id === dragId);
+    const to = tasks.findIndex(t => t.id === id);
+    if (from < 0 || to < 0) return;
+    const [moved] = tasks.splice(from, 1);
+    tasks.splice(to, 0, moved);
+    save(); render();
+  }
+
+  // ---------- Render ----------
+  function sortTasks(list, mode) {
+    if (mode === 'manual' || !mode) return list;
+    const priorityRank = { high: 0, med: 1, low: 2 };
+    const focusRank = { today: 0, tomorrow: 1, thisweek: 2, nextweek: 3, someday: 4, '': 5 };
+    const sorted = list.slice();
+    if (mode === 'focus') {
+      sorted.sort((a,b) => {
+        // Overdue items always first
+        const aOver = !a.done && dueState(a) === 'overdue' ? 0 : 1;
+        const bOver = !b.done && dueState(b) === 'overdue' ? 0 : 1;
+        if (aOver !== bOver) return aOver - bOver;
+        // Then by focus bucket (using effective focus)
+        const fa = focusRank[effectiveFocus(a) || ''], fb = focusRank[effectiveFocus(b) || ''];
+        if (fa !== fb) return fa - fb;
+        // Then by priority within bucket
+        return priorityRank[a.priority] - priorityRank[b.priority];
+      });
+    } else if (mode === 'due') {
+      sorted.sort((a,b) => {
+        if (!a.due && !b.due) return 0;
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return new Date(a.due) - new Date(b.due);
+      });
+    } else if (mode === 'requested') {
+      sorted.sort((a,b) => (b.requested||'').localeCompare(a.requested||''));
+    } else if (mode === 'age') {
+      sorted.sort((a,b) => (a.requested||'').localeCompare(b.requested||''));
+    } else if (mode === 'priority') {
+      sorted.sort((a,b) => priorityRank[a.priority] - priorityRank[b.priority]);
+    } else if (mode === 'cost') {
+      sorted.sort((a,b) => (b.cost || 0) - (a.cost || 0));
+    } else if (mode === 'time') {
+      sorted.sort((a,b) => {
+        const ta = a.timeEst || Infinity, tb = b.timeEst || Infinity;
+        return ta - tb;
+      });
+    } else if (mode === 'requester') {
+      sorted.sort((a,b) => (a.requester||'~').localeCompare(b.requester||'~'));
+    }
+    return sorted;
+  }
+
+  function groupTasks(list, mode) {
+    if (!mode) return [{ key: '', tasks: list }];
+    const groups = {};
+    list.forEach(t => {
+      let key;
+      if (mode === 'focus') {
+        key = focusGroupName(effectiveFocus(t));
+      } else {
+        key = (t[mode] || '').trim() || '(none)';
+      }
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+    const keys = Object.keys(groups);
+    if (mode === 'focus') {
+      // Order: Today, Tomorrow, This week, Next week, Later, No plan
+      const orderedKeys = ['⭐ Today', '📅 Tomorrow', '📆 This week', '⏭ Next week', '🌙 Someday', '— No plan —'];
+      return orderedKeys.filter(k => groups[k]).map(k => ({ key: k, tasks: groups[k] }));
+    }
+    return keys.sort((a,b) => {
+      if (a === '(none)') return 1;
+      if (b === '(none)') return -1;
+      return a.localeCompare(b);
+    }).map(key => ({ key, tasks: groups[key] }));
+  }
+
+  function toggleGroup(key) {
+    if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+    else collapsedGroups.add(key);
+    render();
+  }
+
+  function renderTask(t) {
+    const state = dueState(t);
+    const pClass = 'priority-' + (t.priority === 'high' ? 'high' : t.priority === 'low' ? 'low' : 'med');
+    const typeBadge = t.type ? `<span class="badge type-other">${escapeHtml(t.type)}</span>` : '';
+    const srcBadge = t.source ? `<span class="badge src">📍 ${escapeHtml(t.source)}</span>` : '';
+    const recurBadge = t.recur ? `<span class="badge recur">🔄 ${recurLabel(t)}${t.alertTime ? ' @ ' + t.alertTime : ''}</span>` : '';
+    const projBadge = t.project ? `<span class="badge project">📁 ${escapeHtml(t.project)}</span>` : '';
+    const costBadge = (t.cost != null && t.cost > 0) ? `<span class="badge cost">$${t.cost.toFixed(2)}</span>` : '';
+    const timeBadge = t.timeEst ? `<span class="badge time">⏲ ${formatMinutes(t.timeEst)}</span>` : '';
+    let habitBadge = '';
+    if (t.isHabit && !t.done) {
+      const stats = habitStats(t);
+      if (stats) {
+        const fire = stats.current >= 7 ? '🔥' : stats.current >= 3 ? '✨' : '·';
+        habitBadge = `<span class="badge habit" title="Current streak: ${stats.current}, Longest: ${stats.longest}, Last 30d: ${stats.last30Rate}%">${fire} ${stats.current} streak</span>`;
+      }
+    }
+    const ef = effectiveFocus(t);
+    const auto = isAutoFocus(t);
+    const autoSuffix = auto ? '<sup style="opacity:0.55;font-size:8px;margin-left:2px;">auto</sup>' : '';
+    const focBadge = ef
+      ? `<span class="badge focus-${ef}" style="cursor:${auto ? 'default' : 'pointer'}" title="${auto ? 'Auto-set from due date — change due date to change focus' : 'Click to cycle focus'}" onclick="cycleFocus('${t.id}')">${FOCUS_LABELS[ef]}${autoSuffix}</span>`
+      : `<span class="badge focus-someday" style="cursor:pointer; opacity:0.6; font-style:normal;" title="Click to set focus" onclick="cycleFocus('${t.id}')">+ focus</span>`;
+    const reqBadge = t.requester ? `<span>👤 ${escapeHtml(t.requester)}</span>` : '';
+    const dueBadge = t.due ? `<span>📅 ${fmtDue(t.due)}</span>` : '';
+    let ageBadge = '';
+    if (t.recur && !t.done) {
+      // For recurring tasks, age is less meaningful - show last completion instead
+      const last = completionsLog.filter(c => c.taskId === t.id).pop();
+      if (last) {
+        const daysSince = Math.floor((Date.now() - last.completedAt) / (24*60*60*1000));
+        ageBadge = `<span class="age-pill" title="Last completed ${new Date(last.completedAt).toLocaleString()}">✓ ${daysSince === 0 ? 'today' : daysSince + 'd ago'}</span>`;
+      }
+    } else if (!t.done) {
+      const days = ageDays(t);
+      const cls = days >= 14 ? 'very-stale' : days >= 7 ? 'stale' : '';
+      ageBadge = `<span class="age-pill ${cls}" title="Requested ${fmtDate(t.requested)}">⏱ ${ageLabel(days)}</span>`;
+    } else {
+      const cd = completionDays(t);
+      if (cd !== null) ageBadge = `<span class="age-pill" title="Requested ${fmtDate(t.requested)}">✓ took ${cd}d</span>`;
+    }
+    return `
+      <div class="task ${state}" draggable="true"
+           ondragstart="onDragStart(event,'${t.id}')"
+           ondragend="onDragEnd(event)"
+           ondragover="onDragOver(event,'${t.id}')"
+           ondrop="onDrop(event,'${t.id}')">
+        <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleDone('${t.id}')"></div>
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(t.title)}${ageBadge}</div>
+          <div class="task-meta">
+            <span class="priority-dot ${pClass}" title="Click to change priority" style="cursor:pointer" onclick="cyclePriority('${t.id}')"></span>
+            ${focBadge}
+            ${typeBadge}
+            ${projBadge}
+            ${srcBadge}
+            ${recurBadge}
+            ${habitBadge}
+            ${costBadge}
+            ${timeBadge}
+            ${reqBadge}
+            ${dueBadge}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn" onclick="openModal('${t.id}')" title="Edit">✎</button>
+          <button class="icon-btn" onclick="deleteTask('${t.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function render() {
+    // Stats
+    const open = tasks.filter(t => !t.done);
+    const overdue = open.filter(t => dueState(t) === 'overdue').length;
+    const today = open.filter(t => dueState(t) === 'today').length;
+    const done = tasks.filter(t => t.done).length;
+    document.getElementById('stats').innerHTML = `
+      <div class="stat"><div class="stat-num">${open.length}</div><div class="stat-label">Open</div></div>
+      <div class="stat overdue"><div class="stat-num">${overdue}</div><div class="stat-label">Overdue</div></div>
+      <div class="stat today"><div class="stat-num">${today}</div><div class="stat-label">Due today</div></div>
+      <div class="stat"><div class="stat-num">${done}</div><div class="stat-label">Done</div></div>
+    `;
+
+    // Filter
+    const search = document.getElementById('search').value.toLowerCase().trim();
+    let list = tasks.slice();
+    if (filter === 'active') list = list.filter(t => !t.done);
+    else if (filter === 'done') list = list.filter(t => t.done);
+    else if (filter === 'someday') list = list.filter(t => !t.done && effectiveFocus(t) === 'someday');
+    else if (filter === 'habits') list = list.filter(t => t.isHabit);
+    else if (filter === 'overdue') list = list.filter(t => !t.done && dueState(t) === 'overdue');
+    else if (filter === 'focus') {
+      // Today: focus=today (manual or derived) + overdue + due-today
+      list = list.filter(t => {
+        if (t.done) return false;
+        if (effectiveFocus(t) === 'today') return true;
+        const s = dueState(t);
+        if (s === 'overdue' || s === 'today') return true;
+        return false;
+      });
+    }
+    else if (filter === 'tomorrow') {
+      list = list.filter(t => !t.done && effectiveFocus(t) === 'tomorrow');
+    }
+    else if (filter === 'thisweek') {
+      list = list.filter(t => {
+        if (t.done) return false;
+        const ef = effectiveFocus(t);
+        return ef === 'today' || ef === 'tomorrow' || ef === 'thisweek';
+      });
+    }
+    if (search) {
+      list = list.filter(t =>
+        (t.title + ' ' + (t.requester||'') + ' ' + (t.project||'') + ' ' + (t.type||'') + ' ' + (t.source||'') + ' ' + (t.notes||''))
+          .toLowerCase().includes(search)
+      );
+    }
+
+    // Sort
+    const sortMode = document.getElementById('sortBy').value;
+    list = sortTasks(list, sortMode);
+
+    // Group
+    const groupMode = document.getElementById('groupBy').value;
+
+    // Disable drag-reorder when sorted or grouped (it would be confusing)
+    const dragEnabled = (sortMode === 'manual' || !sortMode) && !groupMode;
+
+    const container = document.getElementById('taskList');
+    if (!list.length) {
+      container.innerHTML = `<div class="empty-state">${tasks.length === 0 ? 'No tasks yet. Add one above.' : 'Nothing here. Try another filter.'}</div>`;
+      return;
+    }
+
+    const groups = groupTasks(list, groupMode);
+    container.innerHTML = groups.map(g => {
+      const tasksHtml = g.tasks.map(renderTask).join('');
+      if (!groupMode) return tasksHtml;
+      const collapsed = collapsedGroups.has(g.key);
+      return `
+        <div class="group-header ${collapsed ? 'collapsed' : ''}" onclick="toggleGroup('${escapeHtml(g.key).replace(/'/g, "\\'")}')">
+          <span class="caret">▼</span>
+          <span>${escapeHtml(g.key)}</span>
+          <span class="count">(${g.tasks.length})</span>
+        </div>
+        <div class="group-tasks ${collapsed ? 'collapsed' : ''}">${tasksHtml}</div>
+      `;
+    }).join('');
+
+    // Suppress dragging when sorted/grouped
+    if (!dragEnabled) {
+      container.querySelectorAll('.task').forEach(el => {
+        el.removeAttribute('draggable');
+        el.style.cursor = 'default';
+      });
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- Daily digest ----------
+  function toggleDigest() {
+    const d = document.getElementById('digest');
+    d.classList.toggle('show');
+    if (d.classList.contains('show')) renderDigest();
+  }
+  function renderDigest() {
+    const open = tasks.filter(t => !t.done);
+    const overdue = open.filter(t => dueState(t) === 'overdue');
+    const today = open.filter(t => dueState(t) === 'today');
+    const todayPlanned = open.filter(t => effectiveFocus(t) === 'today' && !overdue.includes(t) && !today.includes(t));
+    const habitsToday = open.filter(t => t.isHabit && (t.recur === 'daily' || (t.recur === 'weekdays' && new Date().getDay() >= 1 && new Date().getDay() <= 5)));
+    const today_str = new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+
+    const sec = (label, list) => list.length
+      ? `<h4>${label} (${list.length})</h4><ul>${list.map(t => `<li><strong>${escapeHtml(t.title)}</strong>${t.due ? ' — ' + fmtDue(t.due) : ''}${t.requester ? ' (for ' + escapeHtml(t.requester) + ')' : ''}</li>`).join('')}</ul>`
+      : '';
+
+    document.getElementById('digest').innerHTML = `
+      <h3>Today's plan — ${today_str}</h3>
+      ${sec('🔴 Overdue', overdue)}
+      ${sec('🟠 Due today', today)}
+      ${sec('⭐ Planned for today', todayPlanned)}
+      ${sec('🔥 Habits to do today', habitsToday)}
+      ${(!overdue.length && !today.length && !todayPlanned.length && !habitsToday.length) ? '<p style="color:var(--text-muted)">Nothing pressing today. Enjoy! 🌷</p>' : ''}
+      <div class="digest-actions">
+        <button onclick="copyDigest()">📋 Copy as text</button>
+        <button onclick="emailDigest()">✉ Email to myself</button>
+        <button onclick="toggleDigest()">Close</button>
+      </div>
+    `;
+  }
+  function digestText() {
+    const open = tasks.filter(t => !t.done);
+    const overdue = open.filter(t => dueState(t) === 'overdue');
+    const today = open.filter(t => dueState(t) === 'today');
+    const todayPlanned = open.filter(t => effectiveFocus(t) === 'today' && !overdue.includes(t) && !today.includes(t));
+    const habitsToday = open.filter(t => t.isHabit && (t.recur === 'daily' || (t.recur === 'weekdays' && new Date().getDay() >= 1 && new Date().getDay() <= 5)));
+    const fmt = (label, list) => list.length
+      ? `\n${label}:\n` + list.map(t => `  • ${t.title}${t.due ? ' — ' + fmtDue(t.due) : ''}${t.requester ? ' (for ' + t.requester + ')' : ''}`).join('\n')
+      : '';
+    return `Today's plan — ${new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' })}\n`
+      + fmt('OVERDUE', overdue)
+      + fmt('DUE TODAY', today)
+      + fmt('PLANNED FOR TODAY', todayPlanned)
+      + fmt('HABITS TODAY', habitsToday);
+  }
+  function copyDigest() {
+    navigator.clipboard.writeText(digestText())
+      .then(() => alert('Copied to clipboard'))
+      .catch(() => alert('Copy failed — your browser may not allow it.'));
+  }
+  function emailDigest() {
+    const subject = encodeURIComponent('My task digest — ' + new Date().toLocaleDateString());
+    const body = encodeURIComponent(digestText());
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+
+  // ---------- History view ----------
+  function toggleHistory() {
+    const el = document.getElementById('history');
+    const visible = el.style.display !== 'none';
+    el.style.display = visible ? 'none' : 'block';
+    if (!visible) renderHistory();
+  }
+  function renderHistory() {
+    const done = tasks.filter(t => t.done && t.completedAt);
+    const habits = tasks.filter(t => t.isHabit);
+    const totalCompletions = done.length + completionsLog.length;
+
+    if (totalCompletions === 0 && habits.length === 0) {
+      document.getElementById('history').innerHTML = `
+        <h3>What you've been up to</h3>
+        <p style="color: var(--text-muted); font-size: 13px;">No completed tasks yet. Once you finish some, you'll see them here.</p>
+        <div class="digest-actions"><button onclick="toggleHistory()">Close</button></div>
+      `;
+      return;
+    }
+
+    const now = Date.now();
+    const allCompletions = [
+      ...done.map(t => ({ at: t.completedAt, type: t.type, cost: t.cost, requester: t.requester })),
+      ...completionsLog.map(c => ({ at: c.completedAt, type: c.type, cost: null, requester: c.requester }))
+    ];
+    const last30 = allCompletions.filter(c => now - c.at < 30*24*60*60*1000).length;
+    const last7 = allCompletions.filter(c => now - c.at < 7*24*60*60*1000).length;
+    const totalCostAll = done.reduce((sum, t) => sum + (t.cost || 0), 0);
+    const totalCost30 = done.filter(t => now - t.completedAt < 30*24*60*60*1000)
+      .reduce((sum, t) => sum + (t.cost || 0), 0);
+
+    // Habits section
+    let habitsHtml = '';
+    if (habits.length > 0) {
+      const habitRows = habits.map(t => {
+        const stats = habitStats(t) || { current: 0, longest: 0, total: 0, last30Rate: 0 };
+        const fire = stats.current >= 7 ? '🔥' : stats.current >= 3 ? '✨' : '·';
+        return `<tr>
+          <td>${escapeHtml(t.title)}<div style="font-size:11px;color:var(--text-faint);">${recurLabel(t)}</div></td>
+          <td style="text-align:right; font-size: 16px;">${fire} ${stats.current}</td>
+          <td style="text-align:right; color: var(--text-muted);">${stats.longest}</td>
+          <td style="text-align:right; color: ${stats.last30Rate >= 80 ? 'var(--done-text)' : stats.last30Rate >= 60 ? 'var(--today-border)' : 'var(--overdue-border)'};">${stats.last30Rate}%</td>
+          <td style="text-align:right; color: var(--text-muted);">${stats.total}</td>
+        </tr>`;
+      }).join('');
+      habitsHtml = `
+        <h4>🔥 Habits</h4>
+        <table class="breakdown-table">
+          <tr>
+            <th>Habit</th>
+            <th style="text-align:right;">Current streak</th>
+            <th style="text-align:right;">Longest</th>
+            <th style="text-align:right;">30-day rate</th>
+            <th style="text-align:right;">Total ever</th>
+          </tr>
+          ${habitRows}
+        </table>
+      `;
+    }
+
+    // By type
+    const byType = (() => {
+      const counts = {};
+      done.forEach(t => {
+        const v = (t.type || '').trim() || '(none)';
+        if (!counts[v]) counts[v] = { count: 0, cost: 0 };
+        counts[v].count++;
+        counts[v].cost += t.cost || 0;
+      });
+      return Object.keys(counts)
+        .sort((a,b) => counts[b].count - counts[a].count)
+        .map(k => ({ name: k, count: counts[k].count, cost: counts[k].cost }));
+    })();
+
+    const tableHtml = byType.length ? `
+      <h4 style="margin-top: 16px;">By type</h4>
+      <table class="breakdown-table">
+        <tr><th>Type</th><th style="text-align:right;">Done</th><th style="text-align:right;">Total cost</th></tr>
+        ${byType.map(r => `
+          <tr>
+            <td>${escapeHtml(r.name)}</td>
+            <td style="text-align:right;">${r.count}</td>
+            <td style="text-align:right; color: var(--text-muted);">${r.cost > 0 ? '$' + r.cost.toFixed(2) : '—'}</td>
+          </tr>
+        `).join('')}
+      </table>
+    ` : '';
+
+    document.getElementById('history').innerHTML = `
+      <h3>What you've been up to</h3>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="metric-num">${totalCompletions}</div><div class="metric-label">Total completions</div></div>
+        <div class="metric-card"><div class="metric-num">${last7}</div><div class="metric-label">Last 7 days</div></div>
+        <div class="metric-card"><div class="metric-num">${last30}</div><div class="metric-label">Last 30 days</div></div>
+        <div class="metric-card"><div class="metric-num">$${totalCost30.toFixed(0)}</div><div class="metric-label">Spent (30d)</div></div>
+        <div class="metric-card"><div class="metric-num">$${totalCostAll.toFixed(0)}</div><div class="metric-label">Spent total</div></div>
+      </div>
+      ${habitsHtml}
+      ${tableHtml}
+      <div class="digest-actions">
+        <button onclick="copyHistory()">📋 Copy as text</button>
+        <button onclick="toggleHistory()">Close</button>
+      </div>
+    `;
+  }
+  function copyHistory() {
+    const done = tasks.filter(t => t.done && t.completedAt);
+    if (!done.length) return;
+    const lines = [`What you've been up to — ${new Date().toLocaleDateString()}`,
+      `Total completed: ${done.length}`, ''];
+    done.slice().sort((a,b) => b.completedAt - a.completedAt).forEach(t => {
+      lines.push(`• ${t.title}${t.requester ? ' (for ' + t.requester + ')' : ''}${t.cost ? ' — $' + t.cost.toFixed(2) : ''}`);
+    });
+    navigator.clipboard.writeText(lines.join('\n'))
+      .then(() => alert('Copied'))
+      .catch(() => alert('Copy failed'));
+  }
+
+  // ---------- Notifications ----------
+  function requestNotifPerm() {
+    if (!('Notification' in window)) { alert('Your browser does not support notifications.'); return; }
+    Notification.requestPermission().then(p => {
+      updateNotifBtn();
+      if (p === 'granted') alert('Alerts enabled. Keep this tab open to receive due-date notifications.');
+    });
+  }
+  function updateNotifBtn() {
+    const btn = document.getElementById('notifBtn');
+    if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+    if (Notification.permission === 'granted') btn.textContent = '🔔 Alerts on';
+    else if (Notification.permission === 'denied') btn.textContent = '🔕 Alerts blocked';
+    else btn.textContent = '🔔 Enable alerts';
+  }
+  function checkDueNotifications() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const now = Date.now();
+    let changed = false;
+    tasks.forEach(t => {
+      if (t.done || !t.due || notifiedIds.has(t.id)) return;
+      const due = new Date(t.due).getTime();
+      // Notify if due within next 15 min OR is now overdue (and we haven't notified)
+      if (due - now <= 15*60*1000) {
+        try {
+          new Notification('Task due: ' + t.title, {
+            body: (t.requester ? 'For ' + t.requester + ' · ' : '') + (due < now ? 'OVERDUE' : 'Due ' + fmtDue(t.due)),
+            tag: t.id,
+          });
+          notifiedIds.add(t.id);
+          changed = true;
+        } catch(e) {}
+      }
+    });
+    if (changed) save();
+  }
+
+  // ---------- Import / Export ----------
+  function exportData(manual) {
+    const payload = { tasks, completionsLog, exportedAt: new Date().toISOString(), version: 2 };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = APP_NAMESPACE + '-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    localStorage.setItem(KEY_LAST_BACKUP, String(Date.now()));
+    updateBackupStatus();
+  }
+  function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        // Support both old format (array of tasks) and new format ({tasks, completionsLog})
+        let importedTasks, importedLog;
+        if (Array.isArray(data)) {
+          importedTasks = data;
+          importedLog = [];
+        } else if (data.tasks && Array.isArray(data.tasks)) {
+          importedTasks = data.tasks;
+          importedLog = Array.isArray(data.completionsLog) ? data.completionsLog : [];
+        } else {
+          throw new Error('Unrecognized backup format');
+        }
+        const msg = `Import ${importedTasks.length} tasks${importedLog.length ? ' and ' + importedLog.length + ' completion records' : ''}? This will REPLACE your current data.`;
+        if (confirm(msg)) {
+          tasks = importedTasks;
+          completionsLog = importedLog;
+          save(); render(); refreshAutocomplete();
+        }
+      } catch(err) { alert('Could not read file: ' + err.message); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  // ---------- Weekly backup prompt ----------
+  function updateBackupStatus() {
+    const last = parseInt(localStorage.getItem(KEY_LAST_BACKUP) || '0', 10);
+    const el = document.getElementById('backupStatus');
+    if (!el) return;
+    if (!last) {
+      el.textContent = 'No backup yet';
+      el.style.color = 'var(--overdue-border)';
+      return;
+    }
+    const days = Math.floor((Date.now() - last) / (24*60*60*1000));
+    if (days === 0) el.textContent = 'Backed up today';
+    else if (days === 1) el.textContent = 'Backed up yesterday';
+    else el.textContent = `Backed up ${days} days ago`;
+    if (days >= 7) el.style.color = 'var(--overdue-border)';
+    else if (days >= 5) el.style.color = 'var(--today-border)';
+    else el.style.color = 'var(--text-muted)';
+  }
+  function checkBackupPrompt() {
+    if (tasks.length === 0) return; // nothing to back up
+    const last = parseInt(localStorage.getItem(KEY_LAST_BACKUP) || '0', 10);
+    const snoozed = parseInt(localStorage.getItem(KEY_BACKUP_SNOOZED) || '0', 10);
+    const now = Date.now();
+    const weekMs = 7*24*60*60*1000;
+    // First-ever backup: prompt after 1 day of use
+    if (!last) {
+      const firstUse = parseInt(localStorage.getItem(KEY_FIRST_USE) || '0', 10);
+      if (!firstUse) { localStorage.setItem(KEY_FIRST_USE, String(now)); return; }
+      if (now - firstUse < 24*60*60*1000) return;
+    } else if (now - last < weekMs) {
+      return; // not yet a week
+    }
+    // Don't re-prompt within 24h of snoozing
+    if (now - snoozed < 24*60*60*1000) return;
+    setTimeout(() => {
+      const msg = last
+        ? `It has been ${Math.floor((now-last)/(24*60*60*1000))} days since your last backup.\n\nDownload one now? (Recommended weekly so you don't lose your tasks.)`
+        : 'Quick reminder: your tasks are saved only in this browser.\n\nDownload a backup now? (Recommended weekly.)';
+      if (confirm(msg)) {
+        exportData(true);
+      } else {
+        localStorage.setItem(KEY_BACKUP_SNOOZED, String(Date.now()));
+      }
+    }, 1500); // small delay so the app loads visibly first
+  }
+
+  // ---------- Autocomplete (datalist suggestions) ----------
+  function refreshAutocomplete() {
+    // Count frequency so most-used appear first
+    const tally = (field) => {
+      const counts = {};
+      tasks.forEach(t => {
+        const v = (t[field] || '').trim();
+        if (v) counts[v] = (counts[v] || 0) + 1;
+      });
+      return Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
+    };
+    const fill = (id, values) => {
+      const dl = document.getElementById(id);
+      if (!dl) return;
+      dl.innerHTML = values.map(v => `<option value="${escapeHtml(v)}"></option>`).join('');
+    };
+    fill('dl-requesters', tally('requester'));
+    fill('dl-projects', tally('project'));
+  }
+
+  // ---------- Init ----------
+  load();
+  checkRollover();
+  render();
+  refreshAutocomplete();
+  updateNotifBtn();
+  updateBackupStatus();
+  checkBackupPrompt();
+  // Re-check periodically: refreshes overdue states + fires notifications + updates backup age + handles day rollover
+  setInterval(() => { checkRollover(); render(); checkDueNotifications(); updateBackupStatus(); }, 60*1000);
+  checkDueNotifications();
+
+  // Keyboard: Esc closes modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+  });
+</script>
+</body>
+</html>
